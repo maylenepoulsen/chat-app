@@ -11,9 +11,12 @@ const locationTemplate = document.querySelector('#location-template').innerHTML
 
 const locationButton = document.querySelector('#send-location')
 
+//Options
+const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
+
 //socket.on receives messages from the server
 socket.on('message', (message) => {
-    console.log(message)
+    console.log(message.text)
     const html = Mustache.render(messageTemplate, {
       message: message.text,
       createdAt: moment(message.createdAt).format('h:mm a')
@@ -65,4 +68,12 @@ locationButton.addEventListener('click', () => {
         console.log('Location shared')
       })
     })
+})
+
+socket.emit('join', { username, room }, (error) => {
+  if (error) {
+    alert(error)
+    location.href = '/'
+  }
+  
 })

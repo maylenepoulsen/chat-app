@@ -8,29 +8,63 @@ const messages = document.querySelector('#messages')
 //Templates
 const messageTemplate = document.querySelector('#message-template').innerHTML
 const locationTemplate = document.querySelector('#location-template').innerHTML
+const sidebarTemplate = document.querySelector('#sidebar-template').innerHTML
 
 const locationButton = document.querySelector('#send-location')
 
 //Options
 const { username, room } = Qs.parse(location.search, { ignoreQueryPrefix: true })
 
+const autoscroll = () => {
+  // Get new message element
+  const newMessage = messages.lastElementChild
+
+  // Height of new message
+  const newMessageStyles = getComputedStyle(newMessage)
+  const newMessageMargin = parseInt(newMessageStyles.marginBottom)
+  const newMessageHeight = newMessage.offsetHeight + newMessageMargin
+
+  // Visible Height
+  const visibleHeight = messages.offsetHeight
+
+  // Height of messages container
+  const containerHeight = messages.scrollHeight
+
+  // How far have I scrolled?
+  const scrollOffset = messages.scrollTop + visibleHeight
+
+  if (containerHeight - newMessageHeight <= scrollOffset) {
+    messages.scrollTop = messages.scrollHeight
+  }
+}
+
 //socket.on receives messages from the server
 socket.on('message', (message) => {
-    console.log(message.text)
     const html = Mustache.render(messageTemplate, {
+      username: message.username,
       message: message.text,
       createdAt: moment(message.createdAt).format('h:mm a')
     })
     messages.insertAdjacentHTML('beforeend', html)
+    autoscroll()
 })
 
 socket.on('locationMessage', (locationMessage) => { 
-  console.log(locationMessage)
   const html = Mustache.render(locationTemplate, {
+    username: locationMessage.username,
     url: locationMessage.url,
     createdAt: moment(locationMessage.createdAt).format('h:mm a')
   })
   messages.insertAdjacentHTML('beforeend', html)
+  autoscroll()
+})
+
+socket.on('roomData', ({ room, users }) => {
+  const html = Mustache.render(sidebarTemplate, {
+    room,
+    users  
+  })
+  document.querySelector('#sidebar').innerHTML = html 
 })
 
 messageForm.addEventListener('submit', (e) => {
